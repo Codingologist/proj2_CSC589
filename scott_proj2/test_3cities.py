@@ -4,7 +4,7 @@ sys.path.append('./build')
 import haversine_library
 import numpy as np
 
-#"New York", "Paris", "Sydney", respectively
+#"New York", "Paris", "Sydney", respectively 
 x = np.array([-74.0060,2.3522,151.2093]);
 y = np.array([40.7128,48.8566,-33.8688]);
 

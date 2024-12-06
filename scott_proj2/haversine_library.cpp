@@ -1,12 +1,13 @@
 #include <iostream>
+#include <iostream>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 #include <cuda_runtime.h>
 
-void run_kernel(int size, const double *x1, const double *y1, const double *x2, const double *y2, double *dist);
+void run_kernel(int size, const double* x1, const double* y1, const double* x2, const double* y2, double* dist);
 
-float calc_time(char *msg, timeval t0, timeval t1)
+float calc_time(char* msg, timeval t0, timeval t1)
 {
     long d = t1.tv_sec * 1000000 + t1.tv_usec - t0.tv_sec * 1000000 - t0.tv_usec;
     float t = (float)d / 1000;
@@ -16,20 +17,18 @@ float calc_time(char *msg, timeval t0, timeval t1)
 }
 
 static void HandleError(cudaError_t err,
-                        const char *file,
-                        int line)
-{
-    if (err != cudaSuccess)
-    {
+    const char* file,
+    int line) {
+    if (err != cudaSuccess) {
         printf("%s in %s at line %d\n", cudaGetErrorString(err),
-               file, line);
+            file, line);
         exit(EXIT_FAILURE);
     }
 }
-#define HANDLE_ERROR(err) (HandleError(err, __FILE__, __LINE__))
+#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
 
 void haversine_distance(int size, pybind11::array_t<double> x1_v, pybind11::array_t<double> y1_v,
-                        pybind11::array_t<double> x2_v, pybind11::array_t<double> y2_v, pybind11::array_t<double> dist_v)
+    pybind11::array_t<double> x2_v, pybind11::array_t<double> y2_v, pybind11::array_t<double> dist_v)
 {
     timeval s0, e0, s1, e1, s2, e2, s3, e3;
     assert(x1_v.request().ndim == 1);
@@ -39,7 +38,7 @@ void haversine_distance(int size, pybind11::array_t<double> x1_v, pybind11::arra
     assert(dist_v.request().ndim == 1);
 
     gettimeofday(&s0, NULL); // used procedure from project1 to measure elapsed time
-    double *d_x1, *d_y1, *d_x2, *d_y2, *d_dist;
+    double* d_x1, * d_y1, * d_x2, * d_y2, * d_dist;
     HANDLE_ERROR(cudaMalloc(&d_x1, size * sizeof(double)));
     HANDLE_ERROR(cudaMalloc(&d_y1, size * sizeof(double)));
     HANDLE_ERROR(cudaMalloc(&d_x2, size * sizeof(double)));
@@ -49,11 +48,11 @@ void haversine_distance(int size, pybind11::array_t<double> x1_v, pybind11::arra
     calc_time("Time to allocate memory (ms):\n", s0, e0);
 
     gettimeofday(&s1, NULL);
-    double *h_x1 = reinterpret_cast<double *>(x1_v.request().ptr);
-    double *h_y1 = reinterpret_cast<double *>(y1_v.request().ptr);
-    double *h_x2 = reinterpret_cast<double *>(x2_v.request().ptr);
-    double *h_y2 = reinterpret_cast<double *>(y2_v.request().ptr);
-    double *h_dist = reinterpret_cast<double *>(dist_v.request().ptr);
+    double* h_x1 = reinterpret_cast<double*>(x1_v.request().ptr);
+    double* h_y1 = reinterpret_cast<double*>(y1_v.request().ptr);
+    double* h_x2 = reinterpret_cast<double*>(x2_v.request().ptr);
+    double* h_y2 = reinterpret_cast<double*>(y2_v.request().ptr);
+    double* h_dist = reinterpret_cast<double*>(dist_v.request().ptr);
 
     HANDLE_ERROR(cudaMemcpy(d_x1, h_x1, size * sizeof(double), cudaMemcpyHostToDevice));
     HANDLE_ERROR(cudaMemcpy(d_y1, h_y1, size * sizeof(double), cudaMemcpyHostToDevice));
@@ -62,12 +61,12 @@ void haversine_distance(int size, pybind11::array_t<double> x1_v, pybind11::arra
     gettimeofday(&e1, NULL);
     calc_time("Time for CPU -> GPU (ms):\n", s1, e1);
 
-    // printf("before\n");
+    //printf("before\n");
     gettimeofday(&s2, NULL);
     run_kernel(size, d_x1, d_y1, d_x2, d_y2, d_dist);
     gettimeofday(&e2, NULL);
     calc_time("After running kernel (ms):\n", s2, e2);
-    // printf("after\n");
+    //printf("after\n");
 
     gettimeofday(&s3, NULL);
     HANDLE_ERROR(cudaMemcpy(h_dist, d_dist, size * sizeof(double), cudaMemcpyDeviceToHost));
@@ -79,6 +78,7 @@ void haversine_distance(int size, pybind11::array_t<double> x1_v, pybind11::arra
     HANDLE_ERROR(cudaFree(d_x2));
     HANDLE_ERROR(cudaFree(d_y2));
     HANDLE_ERROR(cudaFree(d_dist));
+
 }
 
 PYBIND11_MODULE(haversine_library, m)
